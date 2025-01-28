@@ -414,17 +414,12 @@ The last field of information for the `ImageFileHeader` resides within the `Char
 
 These are a description of the flags which I pulled from [Microsoft's official Documentation](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format).
 
-IMAGE_FILE_RELOCS_STRIPPED
-	0x0001
-	Image only, Windows CE, and Microsoft Windows NT and later. This indicates that the file does not contain base relocations and must therefore be loaded at its preferred base address. If the base address is not available, the loader reports an error. The default behavior of the linker is to strip base relocations from executable (EXE) files. 
+| Flag Name                     | Value   | Description                                                                                                                                                  |
+|-------------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| IMAGE_FILE_RELOCS_STRIPPED    | 0x0001  | Image only, Windows CE, and Microsoft Windows NT and later. This indicates that the file does not contain base relocations and must be loaded at its preferred base address. If the base address is not available, the loader reports an error. The default behavior of the linker is to strip base relocations from executable (EXE) files. |
+| IMAGE_FILE_EXECUTABLE_IMAGE   | 0x0002  | Image only. This indicates that the image file is valid and can be run. If this flag is not set, it indicates a linker error.                                  |
+| IMAGE_FILE_32BIT_MACHINE      | 0x0100  | Machine is based on a 32-bit-word architecture.                                                                                                               |
 
-IMAGE_FILE_EXECUTABLE_IMAGE
-	0x0002
-	Image only. This indicates that the image file is valid and can be run. If this flag is not set, it indicates a linker error. 
-
-IMAGE_FILE_32BIT_MACHINE
-	0x0100
-	Machine is based on a 32-bit-word architecture. 
 
 ```odin
 getImageCharacteristics :: proc() -> u16 {
@@ -909,16 +904,16 @@ ImageImportDescriptor :: struct {
 
 Each `ImageImportDescriptor` contains the following key fields (the only ones we care about anyways):
 
-    OriginalFirstThunk:
-        This is the RVA of the Import Lookup Table (ILT), which is also referred to as the Import Name Table (INT).
-        The ILT contains entries that point to the names of the imported functions.
+- **OriginalFirstThunk**:
+    * This is the RVA of the Import Lookup Table (ILT), which is also referred to as the Import Name Table (INT).
+    * The ILT contains entries that point to the names of the imported functions.
 
-    Name:
-        This is the RVA of the null-terminated string that specifies the name of the DLL (e.g., kernel32.dll or msvcrt.dll).
+- **Name**:
+    * This is the RVA of the null-terminated string that specifies the name of the DLL (e.g., kernel32.dll or msvcrt.dll).
 
-    FirstThunk:
-        This is the RVA of the Import Address Table (IAT), where the Windows loader will write the resolved addresses of the imported functions at runtime.
-        Initially, the IAT contains placeholders identical to the ILT.
+- **FirstThunk**:
+    * This is the RVA of the Import Address Table (IAT), where the Windows loader will write the resolved addresses of the imported functions at runtime.
+    * Initially, the IAT contains placeholders identical to the ILT.
 
 In this example, we have two imported DLLs: `kernel32.dll` and `msvcrt.dll`. Therefore, the `ImageImportDescriptor` array has two entries (one for each DLL) followed by a null descriptor.
 
@@ -929,6 +924,7 @@ Next are the `exit_hint`, and `print_hint` values. These are the RVAs of the Hin
 With these values defined, we can construct the Import Directory Table by creating an array of `ImageImportDescriptor` structures, setting the correct values for each field.
 
 After we append the bytes for the `imports_directory_table`,  we append the bytes for the `kernel32.dll` name. The string has 12 characters plus a null terminator, totaling 13 bytes. To align it to a 4-byte boundary, we add 1 byte of padding, bringing the total to 14 bytes.  We do the same with the `msvcrt.dll`. The string has 10 characters plus a null terminator, totaling 11 bytes. To align it to a 4-byte boundary, we add 3 bytes of padding, bringing the total to 14 bytes. The two DLL names together are a length of 28 bytes, which is 4 bytes aligned.
+
 
 Then we append bytes for the RVA of the hint for the `ExitProcess` function (`exit_hint`) as the first entry in the ILT for the `kernel32.dll` Lookup Table. We then add a null terminator for the Lookup Table which is 4 bytes of 0 marking the end of the table.
 
@@ -1054,6 +1050,9 @@ $odin run . && ./bin
 Hello World!
 ```
 This was a fun project that taught me quite a bit, hopefully you learned something too.
+
+Here's the link to this project in case you're interested:
+<https://github.com/projectxiel/pe-from-scratch>
 
 # References
 <https://github.com/wine-mirror/wine/blob/master/include/winnt.h>
